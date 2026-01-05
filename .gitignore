@@ -10,8 +10,8 @@ __pycache__/
 
 # Environnement virtuel (si dossier 'venv' ou 'env')
 venv/
-env/
-.env
+# env/
+# .env
 
 # Base de données locale (optionnel, si vous voulez garder la DB locale)
 # db.sqlite3
