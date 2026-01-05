@@ -1,0 +1,25 @@
+# --- EXCLUSION SPECIFIQUE DEMANDÉE ---
+# Ignorer tout le dossier frontend
+cold-chain-frontend/
+
+# --- BACKEND (Python / Django) ---
+# Fichiers compilés et cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnement virtuel (si dossier 'venv' ou 'env')
+venv/
+env/
+.env
+
+# Base de données locale (optionnel, si vous voulez garder la DB locale)
+# db.sqlite3
+
+# Médias uploadés en dev
+media/
+
+# --- IDE & SYSTÈME ---
+.vscode/
+.idea/
+.DS_Store
