@@ -1,6 +1,9 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from django.contrib.auth.models import User
 from .models import *
 from .serializers import *
 from .alerts import send_email_alert, send_telegram_alert, send_whatsapp_alert, send_voice_call
@@ -12,9 +15,69 @@ def log_action(user, action, objet):
         AuditLog.objects.create(user=None, action=action, objet=objet)
 
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register(request):
+    """Enregistrer un nouvel utilisateur"""
+    serializer = UserRegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        log_action(user, "Inscription", f"Utilisateur {user.username}")
+        return Response({
+            "message": "Utilisateur créé avec succès",
+            "user": UserSerializer(user).data
+        }, status=201)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login(request):
+    """Authentifier un utilisateur et retourner les tokens JWT"""
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+        refresh = RefreshToken.for_user(user)
+        
+        log_action(user, "Connexion", f"Utilisateur {user.username}")
+        
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': UserSerializer(user).data
+        })
+    return Response(serializer.errors, status=400)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """Déconnecter l'utilisateur"""
+    try:
+        user = request.user
+        log_action(user, "Déconnexion", f"Utilisateur {user.username}")
+        return Response({"message": "Déconnecté avec succès"})
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    """Récupérer le profil de l'utilisateur connecté"""
+    return Response(UserSerializer(request.user).data)
+
+
 @api_view(['GET'])
 def api_root(request):
     return Response({
+        "auth": {
+            "register": "/api/auth/register/",
+            "login": "/api/auth/login/",
+            "logout": "/api/auth/logout/",
+            "refresh": "/api/auth/refresh/",
+            "profile": "/api/auth/profile/",
+        },
         "mesures_post": "/api/mesures/",
         "mesures_list": "/api/mesures/list/",
         "tickets": "/api/tickets/",
